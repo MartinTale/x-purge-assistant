@@ -3,6 +3,7 @@
   const FOLLOWING_KEY = "following";
   const OWNER_KEY = "owner";
   const TOTAL_KEY = "followingTotal";
+  const SCAN_INTERVAL_MS = 1500;
   const RESERVED = new Set(["i", "home", "search", "notifications", "messages", "explore", "settings"]);
   let kept = {};
   let following = {};
@@ -33,8 +34,12 @@
     let added = false;
     document.querySelectorAll('[data-testid="primaryColumn"] [data-testid="UserCell"]').forEach((row) => {
       const handle = rowHandle(row);
-      if (!handle || following[handle]) return;
-      following[handle] = metaFrom(row, handle);
+      if (!handle) return;
+      const prev = following[handle];
+      if (prev?.avatar && prev.name !== handle) return;
+      const next = metaFrom(row, handle);
+      if (prev && prev.avatar === next.avatar && prev.name === next.name) return;
+      following[handle] = next;
       added = true;
     });
     if (added) chrome.storage.local.set({ [FOLLOWING_KEY]: following });
@@ -101,6 +106,7 @@
     if (changes[FOLLOWING_KEY]) following = changes[FOLLOWING_KEY].newValue || {};
     if (changes[OWNER_KEY]) owner = changes[OWNER_KEY].newValue || "";
     if (changes[KEPT_KEY]) kept = changes[KEPT_KEY].newValue || {};
+    if (changes[OWNER_KEY]) scan();
   });
 
   chrome.storage.local.get([KEPT_KEY, FOLLOWING_KEY, OWNER_KEY], (r) => {
@@ -109,5 +115,6 @@
     owner = r[OWNER_KEY] || "";
     scan();
     new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });
+    setInterval(scan, SCAN_INTERVAL_MS);
   });
 })();
