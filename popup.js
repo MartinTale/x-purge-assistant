@@ -29,14 +29,29 @@
     return li;
   }
 
-  const load = () => chrome.storage.local.get(["following", "kept"], render);
+  const load = () => chrome.storage.local.get(["following", "kept", "importStatus"], (r) => {
+    render(r);
+    renderStatus(r.importStatus);
+  });
+
+  function renderStatus(s) {
+    if (!s) return;
+    importBtn.disabled = !!s.running;
+    status.textContent = s.error
+      ? `Error: ${s.error}`
+      : s.running
+        ? `Importing... ${s.count} found`
+        : `Imported ${s.count} accounts`;
+  }
 
   importBtn.addEventListener("click", async () => {
-    importBtn.disabled = true;
-    status.textContent = "Importing...";
-    const res = await chrome.runtime.sendMessage({ type: "import" });
-    status.textContent = res.error ? `Error: ${res.error}` : `Imported ${res.count} accounts`;
-    importBtn.disabled = false;
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.url?.startsWith("https://x.com/")) {
+      status.textContent = "Open x.com in the current tab first";
+      return;
+    }
+    chrome.tabs.sendMessage(tab.id, { type: "import" });
+    window.close();
   });
 
   chrome.storage.onChanged.addListener(load);
