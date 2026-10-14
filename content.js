@@ -94,7 +94,9 @@
   }
 
   function addKeepButton(unfollowBtn, handle) {
-    if (unfollowBtn.parentElement.querySelector(".xpa-keep")) return;
+    const host = unfollowBtn.parentElement;
+    host.classList.add("xpa-host");
+    if (host.querySelector(".xpa-keep")) return;
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "xpa-keep";
