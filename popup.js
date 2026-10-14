@@ -114,7 +114,7 @@
   pauseBtn.addEventListener("click", () => chrome.storage.local.set({ paused: !data.paused }));
 
   intervalSelect.addEventListener("change", () =>
-    chrome.storage.local.set({ interval: Number(intervalSelect.value) })
+    chrome.storage.local.set({ interval: Number(intervalSelect.value), paused: false })
   );
 
   for (const [name, btn] of Object.entries(tabs)) {
