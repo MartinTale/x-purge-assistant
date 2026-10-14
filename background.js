@@ -1,9 +1,14 @@
 const ALARM = "openRandom";
+const JITTER = 0.25;
 
-async function schedule() {
+async function schedule({ reset = true } = {}) {
   const { interval = 0, paused = false } = await chrome.storage.local.get(["interval", "paused"]);
+  if (!reset && (await chrome.alarms.get(ALARM))) return;
   await chrome.alarms.clear(ALARM);
-  if (interval > 0 && !paused) chrome.alarms.create(ALARM, { periodInMinutes: interval });
+  if (interval > 0 && !paused) {
+    const delayInMinutes = interval * (1 - JITTER + Math.random() * 2 * JITTER);
+    chrome.alarms.create(ALARM, { delayInMinutes });
+  }
 }
 
 async function openRandom() {
@@ -14,7 +19,11 @@ async function openRandom() {
   chrome.tabs.create({ url: `https://x.com/${handle}` });
 }
 
-chrome.alarms.onAlarm.addListener((a) => a.name === ALARM && openRandom());
+chrome.alarms.onAlarm.addListener(async (a) => {
+  if (a.name !== ALARM) return;
+  await openRandom();
+  schedule();
+});
 chrome.storage.onChanged.addListener((c, area) => area === "local" && (c.interval || c.paused) && schedule());
-chrome.runtime.onInstalled.addListener(schedule);
-chrome.runtime.onStartup.addListener(schedule);
+chrome.runtime.onInstalled.addListener(() => schedule());
+chrome.runtime.onStartup.addListener(() => schedule({ reset: false }));
