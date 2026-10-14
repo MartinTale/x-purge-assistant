@@ -68,6 +68,7 @@
   }
 
   function scan() {
+    if (!owner) return;
     if (isOwnerFollowingPage()) scrapeFollowing();
     document.querySelectorAll('[data-testid$="-follow"], [data-testid$="-unfollow"]').forEach((btn) => {
       const cell = btn.closest('[data-testid="UserCell"]');
