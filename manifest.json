@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "X Purge Assistant",
+  "version": "1.0.0",
+  "description": "Mark accounts you follow as Keep, unfollow the rest.",
+  "permissions": ["storage", "cookies"],
+  "host_permissions": ["https://x.com/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": { "default_popup": "popup.html" }
+}

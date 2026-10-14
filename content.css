@@ -1,0 +1,19 @@
+.xpa-keep {
+  all: unset;
+  cursor: pointer;
+  margin-right: 8px;
+  padding: 0 14px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 16px;
+  border: 1px solid rgb(83, 100, 113);
+  color: rgb(83, 100, 113);
+  font: 700 14px sans-serif;
+}
+
+.xpa-keep.xpa-on {
+  background: #00ba7c;
+  border-color: #00ba7c;
+  color: #fff;
+}
