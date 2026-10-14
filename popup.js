@@ -3,6 +3,7 @@
   const status = document.getElementById("status");
   const count = document.getElementById("count");
   const importBtn = document.getElementById("import");
+  const pauseBtn = document.getElementById("pause");
   const intervalSelect = document.getElementById("interval");
 
   function render({ following = {}, kept = {} }) {
@@ -30,8 +31,10 @@
     return li;
   }
 
-  const load = () => chrome.storage.local.get(["following", "kept", "importStatus", "interval"], (r) => {
+  const load = () => chrome.storage.local.get(["following", "kept", "importStatus", "interval", "paused"], (r) => {
     intervalSelect.value = String(r.interval || 0);
+    pauseBtn.hidden = !r.interval;
+    pauseBtn.textContent = r.paused ? "Resume" : "Pause";
     render(r);
     renderStatus(r.importStatus);
   });
@@ -54,6 +57,11 @@
     }
     chrome.tabs.sendMessage(tab.id, { type: "import" });
     window.close();
+  });
+
+  pauseBtn.addEventListener("click", async () => {
+    const { paused } = await chrome.storage.local.get("paused");
+    chrome.storage.local.set({ paused: !paused });
   });
 
   intervalSelect.addEventListener("change", () =>
