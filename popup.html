@@ -1,33 +1,50 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta name="color-scheme" content="light dark" />
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <header>
+    <header class="brand">
+      <img src="icons/icon32.png" alt="" width="28" height="28" />
       <h1>Purge Assistant</h1>
     </header>
-    <label class="row-field">
-      Your X handle
-      <input id="owner" type="text" placeholder="handle" autocomplete="off" />
-    </label>
-    <label class="interval">
-      Open a random account
-      <select id="interval">
-        <option value="0">Never</option>
-        <option value="15">Every 15 min</option>
-        <option value="30">Every 30 min</option>
-        <option value="60">Every hour</option>
-        <option value="120">Every 2 hours</option>
-        <option value="240">Every 4 hours</option>
-        <option value="1440">Every day</option>
-      </select>
-    </label>
-    <button id="pause" type="button" hidden></button>
-    <p id="status" hidden>Enter your handle, then open your following page and scroll to collect accounts.</p>
-    <p id="stats"></p>
-    <ul id="list"></ul>
+
+    <section class="progress" aria-live="polite">
+      <div class="readout"><span id="tracked">0</span><span id="total" class="of"></span></div>
+      <div id="bar" class="bar" hidden><span id="fill"></span></div>
+      <p id="message" class="message"></p>
+    </section>
+
+    <section class="settings">
+      <label class="field">
+        <span>Your X handle</span>
+        <input id="owner" type="text" placeholder="@handle" autocomplete="off" spellcheck="false" />
+      </label>
+      <div class="field">
+        <label for="interval">Open a random account</label>
+        <div class="inline">
+          <select id="interval">
+            <option value="0">Never</option>
+            <option value="15">Every 15 min</option>
+            <option value="30">Every 30 min</option>
+            <option value="60">Every hour</option>
+            <option value="120">Every 2 hours</option>
+            <option value="240">Every 4 hours</option>
+            <option value="1440">Every day</option>
+          </select>
+          <button id="pause" type="button" class="ghost" hidden></button>
+        </div>
+      </div>
+    </section>
+
+    <nav class="tabs" aria-label="Accounts">
+      <button id="tab-review" type="button" aria-pressed="true">To review <span id="n-review"></span></button>
+      <button id="tab-kept" type="button" aria-pressed="false">Kept <span id="n-kept"></span></button>
+    </nav>
+    <ul id="list" class="list"></ul>
+    <p id="empty" class="empty" hidden></p>
     <script src="popup.js"></script>
   </body>
 </html>
