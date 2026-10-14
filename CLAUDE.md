@@ -24,8 +24,8 @@ Work directly on `main`: commit every change and push it.
 ## How it works
 
 - No `owner` set: content script and alarm do nothing.
-- Collection happens only on `/<owner>/following`, from two sources merged into `following` (`mergeUsers`): intercepted `Following` responses (covers rows X unloads while scrolling) and rendered `UserCell` rows (covers an already-rendered page).
-- Any row or profile showing a `-follow` button (not `-unfollow`) removes that handle. Accounts are never added from other pages.
+- Bulk collection happens only on `/<owner>/following`, from two sources merged into `following` (`mergeUsers`): intercepted `Following` responses (covers rows X unloads while scrolling) and rendered `UserCell` rows (covers an already-rendered page).
+- Any row or profile (outside tweets) showing `-unfollow` (Following) adds that handle; `-follow` removes it. This keeps the list current when you follow or unfollow elsewhere.
 - Keep button is added after each `-unfollow` button; its parent gets `.xpa-host` to lay out as a row.
 - `followingTotal` is parsed from the owner's `/following` link text (exact counts only; abbreviated counts like "12K" are skipped).
 - Alarm: one-shot with ±25% jitter (`JITTER`), rescheduled after each fire, on interval/pause/owner change, and on browser start (kept if already pending).

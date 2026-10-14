@@ -23,7 +23,7 @@
   }
 
   function metaFrom(scope, handle) {
-    const name = [...scope.querySelectorAll('[data-testid="User-Name"] span')].find(
+    const name = [...scope.querySelectorAll('[data-testid="User-Name"] span, [data-testid="UserName"] span')].find(
       (s) => !s.children.length && s.textContent.trim() && !s.textContent.trim().startsWith("@")
     );
     const avatar = scope.querySelector('[data-testid^="UserAvatar-Container"] img')?.src || "";
@@ -128,10 +128,17 @@
     if (isOwnerFollowingPage()) scrapeFollowing();
     document.querySelectorAll('[data-testid$="-follow"], [data-testid$="-unfollow"]').forEach((btn) => {
       const cell = btn.closest('[data-testid="UserCell"]');
+      if (!cell && btn.closest("article")) return;
       const handle = cell ? rowHandle(cell) : handleFromHref(location.pathname);
       if (!handle) return;
-      if (btn.getAttribute("data-testid").endsWith("-unfollow")) addKeepButton(btn, handle);
-      else removeFollowing(handle);
+      if (btn.getAttribute("data-testid").endsWith("-unfollow")) {
+        addKeepButton(btn, handle);
+        if (!following[handle]) {
+          mergeUsers([metaFrom(cell || document.querySelector('[data-testid="primaryColumn"]') || document, handle)]);
+        }
+      } else {
+        removeFollowing(handle);
+      }
     });
   }
 
