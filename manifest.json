@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "description": "Mark accounts you follow as Keep, unfollow the rest.",
   "permissions": [
-    "storage"
+    "storage",
+    "alarms"
   ],
   "host_permissions": [
     "https://x.com/*"
@@ -25,5 +26,8 @@
   ],
   "action": {
     "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
   }
 }

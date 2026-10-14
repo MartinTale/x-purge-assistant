@@ -3,6 +3,7 @@
   const status = document.getElementById("status");
   const count = document.getElementById("count");
   const importBtn = document.getElementById("import");
+  const intervalSelect = document.getElementById("interval");
 
   function render({ following = {}, kept = {} }) {
     const users = Object.values(following).sort(
@@ -29,7 +30,8 @@
     return li;
   }
 
-  const load = () => chrome.storage.local.get(["following", "kept", "importStatus"], (r) => {
+  const load = () => chrome.storage.local.get(["following", "kept", "importStatus", "interval"], (r) => {
+    intervalSelect.value = String(r.interval || 0);
     render(r);
     renderStatus(r.importStatus);
   });
@@ -53,6 +55,10 @@
     chrome.tabs.sendMessage(tab.id, { type: "import" });
     window.close();
   });
+
+  intervalSelect.addEventListener("change", () =>
+    chrome.storage.local.set({ interval: Number(intervalSelect.value) })
+  );
 
   chrome.storage.onChanged.addListener(load);
   load();
