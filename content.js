@@ -109,7 +109,16 @@
     });
   }
 
+  let observer;
+  let timer;
+
+  // After the extension reloads, this script is orphaned and every chrome.* call throws.
   function scan() {
+    if (!chrome.runtime?.id) {
+      observer?.disconnect();
+      clearInterval(timer);
+      return;
+    }
     if (!owner) return;
     scrapeTotal();
     if (isOwnerFollowingPage()) scrapeFollowing();
@@ -138,7 +147,8 @@
     following = r[FOLLOWING_KEY] || {};
     owner = r[OWNER_KEY] || "";
     scan();
-    new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });
-    setInterval(scan, SCAN_INTERVAL_MS);
+    observer = new MutationObserver(scan);
+    observer.observe(document.body, { childList: true, subtree: true });
+    timer = setInterval(scan, SCAN_INTERVAL_MS);
   });
 })();
