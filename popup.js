@@ -5,6 +5,7 @@
   const ownerInput = $("owner");
   const intervalSelect = $("interval");
   const pauseBtn = $("pause");
+  const clearBtn = $("clear");
   const tabs = { review: $("tab-review"), kept: $("tab-kept") };
   let view = "review";
   let data = {};
@@ -88,6 +89,7 @@
   function render() {
     renderProgress(data);
     renderList(data);
+    clearBtn.disabled = !Object.keys(data.following || {}).length;
   }
 
   const load = () =>
@@ -103,6 +105,11 @@
   ownerInput.addEventListener("change", () =>
     chrome.storage.local.set({ owner: ownerInput.value.trim().replace(/^@/, "") })
   );
+
+  clearBtn.addEventListener("click", () => {
+    if (!confirm("Clear the tracked list? Kept marks stay.")) return;
+    chrome.storage.local.set({ following: {}, followingTotal: null });
+  });
 
   pauseBtn.addEventListener("click", () => chrome.storage.local.set({ paused: !data.paused }));
 
