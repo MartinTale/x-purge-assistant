@@ -33,23 +33,46 @@
     chrome.storage.local.set({ [FOLLOWING_KEY]: following });
   }
 
-  function scrapeFollowing() {
+  function mergeUsers(users) {
     let changed = false;
-    document.querySelectorAll('[data-testid="primaryColumn"] [data-testid="UserCell"]').forEach((row) => {
-      const handle = rowHandle(row);
-      if (!handle) return;
-      const prev = following[handle];
-      const next = metaFrom(row, handle);
+    for (const next of users) {
+      const prev = following[next.handle];
       const merged = {
-        handle,
-        name: next.name !== handle ? next.name : prev?.name || handle,
+        handle: next.handle,
+        name: next.name !== next.handle ? next.name : prev?.name || next.handle,
         avatar: next.avatar || prev?.avatar || "",
       };
-      if (prev && prev.name === merged.name && prev.avatar === merged.avatar) return;
-      following[handle] = merged;
+      if (prev && prev.name === merged.name && prev.avatar === merged.avatar) continue;
+      following[next.handle] = merged;
       changed = true;
-    });
+    }
     if (changed) saveFollowing();
+  }
+
+  function scrapeFollowing() {
+    const users = [];
+    document.querySelectorAll('[data-testid="primaryColumn"] [data-testid="UserCell"]').forEach((row) => {
+      const handle = rowHandle(row);
+      if (handle) users.push(metaFrom(row, handle));
+    });
+    mergeUsers(users);
+  }
+
+  function parseFollowingResponse(json) {
+    const result = json?.data?.user?.result;
+    const instructions = (result?.timeline || result?.timeline_v2)?.timeline?.instructions || [];
+    return instructions
+      .flatMap((i) => i.entries || [])
+      .flatMap((e) => {
+        const user = e.content?.itemContent?.user_results?.result;
+        const handle = user?.core?.screen_name || user?.legacy?.screen_name;
+        if (!handle) return [];
+        return [{
+          handle,
+          name: user.core?.name || user.legacy?.name || handle,
+          avatar: user.avatar?.image_url || user.legacy?.profile_image_url_https || "",
+        }];
+      });
   }
 
   function removeFollowing(handle) {
@@ -119,12 +142,31 @@
     if (changes[OWNER_KEY]) scan();
   });
 
-  chrome.storage.local.get([KEPT_KEY, FOLLOWING_KEY, OWNER_KEY], (r) => {
-    kept = r[KEPT_KEY] || {};
-    following = r[FOLLOWING_KEY] || {};
-    owner = r[OWNER_KEY] || "";
+  const ready = new Promise((resolve) => {
+    chrome.storage.local.get([KEPT_KEY, FOLLOWING_KEY, OWNER_KEY], (r) => {
+      kept = r[KEPT_KEY] || {};
+      following = r[FOLLOWING_KEY] || {};
+      owner = r[OWNER_KEY] || "";
+      resolve();
+    });
+  });
+
+  // X's own Following responses, relayed by interceptor.js; covers rows X unloads while scrolling.
+  window.addEventListener("message", async (event) => {
+    if (event.source !== window || event.data?.type !== "XPA_FOLLOWING") return;
+    await ready;
+    if (!chrome.runtime?.id || !isOwnerFollowingPage()) return;
+    mergeUsers(parseFollowingResponse(event.data.data));
+  });
+
+  function start() {
     scan();
     observer = new MutationObserver(scan);
     observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  ready.then(() => {
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
+    else start();
   });
 })();
