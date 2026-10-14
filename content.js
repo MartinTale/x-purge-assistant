@@ -2,6 +2,7 @@
   const KEPT_KEY = "kept";
   const FOLLOWING_KEY = "following";
   const OWNER_KEY = "owner";
+  const TOTAL_KEY = "followingTotal";
   const RESERVED = new Set(["i", "home", "search", "notifications", "messages", "explore", "settings"]);
   let kept = {};
   let following = {};
@@ -39,6 +40,18 @@
     if (added) chrome.storage.local.set({ [FOLLOWING_KEY]: following });
   }
 
+  function scrapeTotal() {
+    const link = [...document.querySelectorAll('a[href$="/following"]')].find(
+      (a) => a.getAttribute("href").toLowerCase() === `/${owner.toLowerCase()}/following`
+    );
+    const m = link?.textContent.trim().match(/^(\d[\d,]*)\s/);
+    if (!m) return;
+    const total = Number(m[1].replace(/,/g, ""));
+    chrome.storage.local.get(TOTAL_KEY, (r) => {
+      if (r[TOTAL_KEY] !== total) chrome.storage.local.set({ [TOTAL_KEY]: total });
+    });
+  }
+
   function addKeepButton(unfollowBtn, handle) {
     if (unfollowBtn.parentElement.querySelector(".xpa-keep")) return;
     const btn = document.createElement("button");
@@ -69,6 +82,7 @@
 
   function scan() {
     if (!owner) return;
+    scrapeTotal();
     if (isOwnerFollowingPage()) scrapeFollowing();
     document.querySelectorAll('[data-testid$="-follow"], [data-testid$="-unfollow"]').forEach((btn) => {
       const cell = btn.closest('[data-testid="UserCell"]');

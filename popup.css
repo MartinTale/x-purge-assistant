@@ -13,3 +13,5 @@ li small { display: block; color: #536471; }
 .row-field, .interval { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
 #pause { margin-top: 8px; }
 input { width: 140px; padding: 4px 8px; border: 1px solid #536471; border-radius: 14px; }
+#stats { margin: 8px 0; font-weight: 600; }
+#stats.mismatch { color: #f4212e; }

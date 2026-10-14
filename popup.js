@@ -1,17 +1,19 @@
 (() => {
   const list = document.getElementById("list");
   const status = document.getElementById("status");
-  const count = document.getElementById("count");
+  const stats = document.getElementById("stats");
   const ownerInput = document.getElementById("owner");
   const pauseBtn = document.getElementById("pause");
   const intervalSelect = document.getElementById("interval");
 
-  function render({ following = {}, kept = {} }) {
+  function render({ following = {}, kept = {}, followingTotal = null }) {
     const users = Object.values(following).sort(
       (a, b) => !!kept[a.handle] - !!kept[b.handle] || a.name.localeCompare(b.name)
     );
     const keptCount = users.filter((u) => kept[u.handle]).length;
-    count.textContent = users.length ? `(${keptCount}/${users.length} kept)` : "";
+    const total = followingTotal === null ? "?" : followingTotal;
+    stats.textContent = `Tracked ${users.length} of ${total} following - ${keptCount} kept`;
+    stats.classList.toggle("mismatch", followingTotal !== null && users.length !== followingTotal);
     list.replaceChildren(...users.map((u) => row(u, kept[u.handle])));
   }
 
@@ -31,7 +33,7 @@
     return li;
   }
 
-  const load = () => chrome.storage.local.get(["following", "kept", "owner", "interval", "paused"], (r) => {
+  const load = () => chrome.storage.local.get(["following", "kept", "owner", "interval", "paused", "followingTotal"], (r) => {
     intervalSelect.value = String(r.interval || 0);
     pauseBtn.hidden = !r.interval;
     pauseBtn.textContent = r.paused ? "Resume" : "Pause";
