@@ -100,7 +100,7 @@
     btn.className = "xpa-keep";
     const render = () => {
       btn.classList.toggle("xpa-on", !!kept[handle]);
-      btn.textContent = kept[handle] ? "Kept" : "Keep";
+      btn.textContent = kept[handle] ? "\u2713 Kept" : "Keep";
     };
     btn.addEventListener("click", (e) => {
       e.preventDefault();
@@ -111,7 +111,7 @@
       render();
     });
     render();
-    unfollowBtn.before(btn);
+    unfollowBtn.after(btn);
   }
 
   let observer;

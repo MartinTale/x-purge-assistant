@@ -1,19 +1,38 @@
 .xpa-keep {
   all: unset;
+  box-sizing: border-box;
   cursor: pointer;
-  margin-right: 8px;
-  padding: 0 14px;
+  margin-left: 8px;
+  padding: 0 16px;
   height: 32px;
   display: inline-flex;
   align-items: center;
-  border-radius: 16px;
-  border: 1px solid rgb(83, 100, 113);
-  color: rgb(83, 100, 113);
-  font: 700 14px sans-serif;
+  border-radius: 9999px;
+  background: #6d28d9;
+  color: #fff;
+  font: 700 14px/1 system-ui, sans-serif;
+  transition: background 0.15s ease;
+}
+
+.xpa-keep:hover {
+  background: #5b21b6;
+}
+
+.xpa-keep:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 2px;
 }
 
 .xpa-keep.xpa-on {
-  background: #00ba7c;
-  border-color: #00ba7c;
-  color: #fff;
+  background: #047857;
+}
+
+.xpa-keep.xpa-on:hover {
+  background: #065f46;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xpa-keep {
+    transition: none;
+  }
 }
