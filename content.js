@@ -3,7 +3,6 @@
   const FOLLOWING_KEY = "following";
   const OWNER_KEY = "owner";
   const TOTAL_KEY = "followingTotal";
-  const SCAN_INTERVAL_MS = 1500;
   const RESERVED = new Set(["i", "home", "search", "notifications", "messages", "explore", "settings"]);
   let kept = {};
   let following = {};
@@ -30,39 +29,33 @@
     return { handle, name: name?.textContent.trim() || handle, avatar };
   }
 
-  // Writes are serialized and applied to the stored list, so overlapping scans never overwrite each other.
-  let writeQueue = Promise.resolve();
-  function updateFollowing(apply) {
-    writeQueue = writeQueue
-      .then(async () => {
-        const stored = (await chrome.storage.local.get(FOLLOWING_KEY))[FOLLOWING_KEY] || {};
-        if (apply(stored)) await chrome.storage.local.set({ [FOLLOWING_KEY]: stored });
-      })
-      .catch(() => {});
+  function saveFollowing() {
+    chrome.storage.local.set({ [FOLLOWING_KEY]: following });
   }
 
-  const isStale = (prev, next) => !prev || prev.name !== next.name || prev.avatar !== next.avatar;
-
   function scrapeFollowing() {
-    const found = [];
+    let changed = false;
     document.querySelectorAll('[data-testid="primaryColumn"] [data-testid="UserCell"]').forEach((row) => {
       const handle = rowHandle(row);
       if (!handle) return;
       const prev = following[handle];
-      if (prev?.avatar && prev.name !== handle) return;
       const next = metaFrom(row, handle);
-      if (isStale(prev, next)) found.push(next);
+      const merged = {
+        handle,
+        name: next.name !== handle ? next.name : prev?.name || handle,
+        avatar: next.avatar || prev?.avatar || "",
+      };
+      if (prev && prev.name === merged.name && prev.avatar === merged.avatar) return;
+      following[handle] = merged;
+      changed = true;
     });
-    if (!found.length) return;
-    updateFollowing((stored) => {
-      let changed = false;
-      for (const user of found) {
-        if (!isStale(stored[user.handle], user)) continue;
-        stored[user.handle] = user;
-        changed = true;
-      }
-      return changed;
-    });
+    if (changed) saveFollowing();
+  }
+
+  function removeFollowing(handle) {
+    if (!(handle in following)) return;
+    delete following[handle];
+    saveFollowing();
   }
 
   function scrapeTotal() {
@@ -98,25 +91,12 @@
     unfollowBtn.before(btn);
   }
 
-  function syncFollowing(handle, scope, isFollowing) {
-    if (isFollowing === handle in following) return;
-    const meta = isFollowing ? metaFrom(scope, handle) : null;
-    updateFollowing((stored) => {
-      if (isFollowing === handle in stored) return false;
-      if (isFollowing) stored[handle] = meta;
-      else delete stored[handle];
-      return true;
-    });
-  }
-
   let observer;
-  let timer;
 
   // After the extension reloads, this script is orphaned and every chrome.* call throws.
   function scan() {
     if (!chrome.runtime?.id) {
       observer?.disconnect();
-      clearInterval(timer);
       return;
     }
     if (!owner) return;
@@ -124,19 +104,16 @@
     if (isOwnerFollowingPage()) scrapeFollowing();
     document.querySelectorAll('[data-testid$="-follow"], [data-testid$="-unfollow"]').forEach((btn) => {
       const cell = btn.closest('[data-testid="UserCell"]');
-      const scope = cell || document.querySelector('[data-testid="primaryColumn"]');
-      if (!scope) return;
       const handle = cell ? rowHandle(cell) : handleFromHref(location.pathname);
       if (!handle) return;
-      const isFollowing = btn.getAttribute("data-testid").endsWith("-unfollow");
-      if (isFollowing) addKeepButton(btn, handle);
-      syncFollowing(handle, scope, isFollowing);
+      if (btn.getAttribute("data-testid").endsWith("-unfollow")) addKeepButton(btn, handle);
+      else removeFollowing(handle);
     });
   }
 
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
-    if (changes[FOLLOWING_KEY]) following = changes[FOLLOWING_KEY].newValue || {};
+    if (changes[FOLLOWING_KEY] && !Object.keys(changes[FOLLOWING_KEY].newValue || {}).length) following = {};
     if (changes[OWNER_KEY]) owner = changes[OWNER_KEY].newValue || "";
     if (changes[KEPT_KEY]) kept = changes[KEPT_KEY].newValue || {};
     if (changes[OWNER_KEY]) scan();
@@ -149,6 +126,5 @@
     scan();
     observer = new MutationObserver(scan);
     observer.observe(document.body, { childList: true, subtree: true });
-    timer = setInterval(scan, SCAN_INTERVAL_MS);
   });
 })();
