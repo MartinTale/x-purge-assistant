@@ -1,11 +1,9 @@
 # X Purge Assistant
 
-Chrome extension to prune your X following list.
+Chrome extension to prune your X following list: mark accounts you want to **Keep**, unfollow the rest.
 
-- Nothing runs until you set your handle in the popup; while you scroll `x.com/<handle>/following`, accounts are collected automatically (scrapes the rendered list, no API).
-- Popup interval setting opens a random non-kept account in a new tab roughly every interval (±25%); Pause/Resume button, auto-pauses when nothing is left to review.
-- Popup shows tracked vs X's own following count (read from your profile page) so you can spot gaps.
-- A **Keep** button appears next to Following buttons on x.com; kept accounts are saved locally. Unfollow the rest manually.
-- Accounts are added only from your following page, from X's own `Following` responses (intercepted in the page) and from rendered rows; any row or profile showing Follow removes the account.
-
-Load unpacked at `chrome://extensions` (Developer mode).
+1. Load unpacked at `chrome://extensions` (Developer mode), then refresh x.com.
+2. Enter your handle in the popup. Nothing runs until it is set.
+3. Open `x.com/<handle>/following` and scroll to collect your list. The popup shows tracked vs X's reported total.
+4. Click **Keep** next to accounts you want to keep. Unfollow the rest on X.
+5. Optional: set an interval to have a random non-kept account opened in a new tab every so often (±25%).

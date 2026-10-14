@@ -7,6 +7,7 @@
   let kept = {};
   let following = {};
   let owner = "";
+  let observer;
 
   function handleFromHref(href) {
     const m = (href || "").match(/^\/([A-Za-z0-9_]{1,15})(\/|$|\?)/);
@@ -22,7 +23,7 @@
   }
 
   function metaFrom(scope, handle) {
-    const name = [...scope.querySelectorAll('[data-testid="User-Name"] span, [data-testid="UserName"] span')].find(
+    const name = [...scope.querySelectorAll('[data-testid="User-Name"] span')].find(
       (s) => !s.children.length && s.textContent.trim() && !s.textContent.trim().startsWith("@")
     );
     const avatar = scope.querySelector('[data-testid^="UserAvatar-Container"] img')?.src || "";
@@ -116,8 +117,6 @@
     unfollowBtn.after(btn);
   }
 
-  let observer;
-
   // After the extension reloads, this script is orphaned and every chrome.* call throws.
   function scan() {
     if (!chrome.runtime?.id) {
@@ -139,9 +138,11 @@
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
     if (changes[FOLLOWING_KEY] && !Object.keys(changes[FOLLOWING_KEY].newValue || {}).length) following = {};
-    if (changes[OWNER_KEY]) owner = changes[OWNER_KEY].newValue || "";
     if (changes[KEPT_KEY]) kept = changes[KEPT_KEY].newValue || {};
-    if (changes[OWNER_KEY]) scan();
+    if (changes[OWNER_KEY]) {
+      owner = changes[OWNER_KEY].newValue || "";
+      scan();
+    }
   });
 
   const ready = new Promise((resolve) => {

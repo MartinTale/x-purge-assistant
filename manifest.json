@@ -3,37 +3,29 @@
   "name": "X Purge Assistant",
   "version": "1.0.0",
   "description": "Mark accounts you follow as Keep, unfollow the rest.",
-  "permissions": [
-    "storage",
-    "alarms"
-  ],
-  "host_permissions": [
-    "https://x.com/*"
-  ],
+  "permissions": ["storage", "alarms"],
+  "host_permissions": ["https://x.com/*"],
+  "background": { "service_worker": "background.js" },
   "content_scripts": [
     {
-      "matches": [
-        "https://x.com/*"
-      ],
-      "js": [
-        "interceptor.js"
-      ],
+      "matches": ["https://x.com/*"],
+      "js": ["interceptor.js"],
       "run_at": "document_start",
       "world": "MAIN"
     },
     {
-      "matches": [
-        "https://x.com/*"
-      ],
-      "js": [
-        "content.js"
-      ],
-      "css": [
-        "content.css"
-      ],
+      "matches": ["https://x.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
       "run_at": "document_start"
     }
   ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -42,14 +34,5 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
-  },
-  "background": {
-    "service_worker": "background.js"
-  },
-  "icons": {
-    "16": "icons/icon16.png",
-    "32": "icons/icon32.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
   }
 }

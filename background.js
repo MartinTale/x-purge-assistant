@@ -19,11 +19,13 @@ async function openRandom() {
   chrome.tabs.create({ url: `https://x.com/${handle}` });
 }
 
-chrome.alarms.onAlarm.addListener(async (a) => {
-  if (a.name !== ALARM) return;
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name !== ALARM) return;
   await openRandom();
   schedule();
 });
-chrome.storage.onChanged.addListener((c, area) => area === "local" && (c.interval || c.paused || c.owner) && schedule());
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && (changes.interval || changes.paused || changes.owner)) schedule();
+});
 chrome.runtime.onInstalled.addListener(() => schedule());
 chrome.runtime.onStartup.addListener(() => schedule({ reset: false }));
