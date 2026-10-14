@@ -7,6 +7,7 @@
   const SCROLL_DELAY_MS = 800;
   const IDLE_ROUNDS = 4;
   let kept = {};
+  let following = {};
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -30,15 +31,18 @@
     return handleFromHref(row.querySelector('a[role="link"][href^="/"]')?.getAttribute("href"));
   }
 
+  function metaFrom(scope, handle) {
+    const name = [...scope.querySelectorAll('[data-testid="User-Name"] span, [data-testid="UserName"] span')].find(
+      (s) => !s.children.length && s.textContent.trim() && !s.textContent.trim().startsWith("@")
+    );
+    const avatar = scope.querySelector('[data-testid^="UserAvatar-Container"] img')?.src || "";
+    return { handle, name: name?.textContent.trim() || handle, avatar };
+  }
+
   function scrapeRows(into) {
     document.querySelectorAll('[data-testid="primaryColumn"] [data-testid="UserCell"]').forEach((row) => {
       const handle = rowHandle(row);
-      if (!handle || into[handle]) return;
-      const name = [...row.querySelectorAll('[data-testid="User-Name"] span')].find(
-        (s) => !s.children.length && s.textContent.trim() && !s.textContent.trim().startsWith("@")
-      );
-      const avatar = row.querySelector('[data-testid^="UserAvatar-Container"] img')?.src || "";
-      into[handle] = { handle, name: name?.textContent.trim() || handle, avatar };
+      if (handle && !into[handle]) into[handle] = metaFrom(row, handle);
     });
   }
 
@@ -103,11 +107,23 @@
     unfollowBtn.before(btn);
   }
 
+  function syncFollowing(handle, scope, isFollowing) {
+    if (isFollowing === handle in following) return;
+    if (isFollowing) following[handle] = metaFrom(scope, handle);
+    else delete following[handle];
+    chrome.storage.local.set({ [FOLLOWING_KEY]: following });
+  }
+
   function scan() {
-    document.querySelectorAll('[data-testid$="-unfollow"]').forEach((btn) => {
+    document.querySelectorAll('[data-testid$="-follow"], [data-testid$="-unfollow"]').forEach((btn) => {
       const cell = btn.closest('[data-testid="UserCell"]');
+      const scope = cell || document.querySelector('[data-testid="primaryColumn"]');
+      if (!scope) return;
       const handle = cell ? rowHandle(cell) : handleFromHref(location.pathname);
-      if (handle) addKeepButton(btn, handle);
+      if (!handle) return;
+      const isFollowing = btn.getAttribute("data-testid").endsWith("-unfollow");
+      if (isFollowing) addKeepButton(btn, handle);
+      syncFollowing(handle, scope, isFollowing);
     });
   }
 
@@ -115,8 +131,15 @@
     if (msg.type === "import") startImport();
   });
 
-  chrome.storage.local.get(KEPT_KEY, (r) => {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== "local") return;
+    if (changes[FOLLOWING_KEY]) following = changes[FOLLOWING_KEY].newValue || {};
+    if (changes[KEPT_KEY]) kept = changes[KEPT_KEY].newValue || {};
+  });
+
+  chrome.storage.local.get([KEPT_KEY, FOLLOWING_KEY], (r) => {
     kept = r[KEPT_KEY] || {};
+    following = r[FOLLOWING_KEY] || {};
     scan();
     new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });
     resumeImport();
