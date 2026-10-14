@@ -2,7 +2,7 @@
   const list = document.getElementById("list");
   const status = document.getElementById("status");
   const count = document.getElementById("count");
-  const importBtn = document.getElementById("import");
+  const ownerInput = document.getElementById("owner");
   const pauseBtn = document.getElementById("pause");
   const intervalSelect = document.getElementById("interval");
 
@@ -31,33 +31,18 @@
     return li;
   }
 
-  const load = () => chrome.storage.local.get(["following", "kept", "importStatus", "interval", "paused"], (r) => {
+  const load = () => chrome.storage.local.get(["following", "kept", "owner", "interval", "paused"], (r) => {
     intervalSelect.value = String(r.interval || 0);
     pauseBtn.hidden = !r.interval;
     pauseBtn.textContent = r.paused ? "Resume" : "Pause";
+    if (document.activeElement !== ownerInput) ownerInput.value = r.owner || "";
+    status.hidden = !!r.owner;
     render(r);
-    renderStatus(r.importStatus);
   });
 
-  function renderStatus(s) {
-    if (!s) return;
-    importBtn.disabled = !!s.running;
-    status.textContent = s.error
-      ? `Error: ${s.error}`
-      : s.running
-        ? `Importing... ${s.count} found`
-        : `Imported ${s.count} accounts`;
-  }
-
-  importBtn.addEventListener("click", async () => {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.url?.startsWith("https://x.com/")) {
-      status.textContent = "Open x.com in the current tab first";
-      return;
-    }
-    chrome.tabs.sendMessage(tab.id, { type: "import" });
-    window.close();
-  });
+  ownerInput.addEventListener("change", () =>
+    chrome.storage.local.set({ owner: ownerInput.value.trim().replace(/^@/, "") })
+  );
 
   pauseBtn.addEventListener("click", async () => {
     const { paused } = await chrome.storage.local.get("paused");

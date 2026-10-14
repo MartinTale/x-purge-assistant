@@ -10,5 +10,6 @@ li.kept { opacity: 0.5; }
 li img { width: 32px; height: 32px; border-radius: 50%; }
 li a { flex: 1; color: inherit; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 li small { display: block; color: #536471; }
-.interval { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.row-field, .interval { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
 #pause { margin-top: 8px; }
+input { width: 140px; padding: 4px 8px; border: 1px solid #536471; border-radius: 14px; }

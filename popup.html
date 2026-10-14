@@ -7,8 +7,11 @@
   <body>
     <header>
       <h1>Purge Assistant <span id="count"></span></h1>
-      <button id="import" type="button">Import</button>
     </header>
+    <label class="row-field">
+      Your X handle
+      <input id="owner" type="text" placeholder="handle" autocomplete="off" />
+    </label>
     <label class="interval">
       Open a random account
       <select id="interval">
@@ -22,7 +25,7 @@
       </select>
     </label>
     <button id="pause" type="button" hidden></button>
-    <p id="status"></p>
+    <p id="status" hidden>Enter your handle, then open your following page and scroll to collect accounts.</p>
     <ul id="list"></ul>
     <script src="popup.js"></script>
   </body>
