@@ -30,19 +30,39 @@
     return { handle, name: name?.textContent.trim() || handle, avatar };
   }
 
+  // Writes are serialized and applied to the stored list, so overlapping scans never overwrite each other.
+  let writeQueue = Promise.resolve();
+  function updateFollowing(apply) {
+    writeQueue = writeQueue
+      .then(async () => {
+        const stored = (await chrome.storage.local.get(FOLLOWING_KEY))[FOLLOWING_KEY] || {};
+        if (apply(stored)) await chrome.storage.local.set({ [FOLLOWING_KEY]: stored });
+      })
+      .catch(() => {});
+  }
+
+  const isStale = (prev, next) => !prev || prev.name !== next.name || prev.avatar !== next.avatar;
+
   function scrapeFollowing() {
-    let added = false;
+    const found = [];
     document.querySelectorAll('[data-testid="primaryColumn"] [data-testid="UserCell"]').forEach((row) => {
       const handle = rowHandle(row);
       if (!handle) return;
       const prev = following[handle];
       if (prev?.avatar && prev.name !== handle) return;
       const next = metaFrom(row, handle);
-      if (prev && prev.avatar === next.avatar && prev.name === next.name) return;
-      following[handle] = next;
-      added = true;
+      if (isStale(prev, next)) found.push(next);
     });
-    if (added) chrome.storage.local.set({ [FOLLOWING_KEY]: following });
+    if (!found.length) return;
+    updateFollowing((stored) => {
+      let changed = false;
+      for (const user of found) {
+        if (!isStale(stored[user.handle], user)) continue;
+        stored[user.handle] = user;
+        changed = true;
+      }
+      return changed;
+    });
   }
 
   function scrapeTotal() {
@@ -80,9 +100,13 @@
 
   function syncFollowing(handle, scope, isFollowing) {
     if (isFollowing === handle in following) return;
-    if (isFollowing) following[handle] = metaFrom(scope, handle);
-    else delete following[handle];
-    chrome.storage.local.set({ [FOLLOWING_KEY]: following });
+    const meta = isFollowing ? metaFrom(scope, handle) : null;
+    updateFollowing((stored) => {
+      if (isFollowing === handle in stored) return false;
+      if (isFollowing) stored[handle] = meta;
+      else delete stored[handle];
+      return true;
+    });
   }
 
   function scan() {
